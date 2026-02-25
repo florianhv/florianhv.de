@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Case for Vanilla - Florian H&ouml;veler</title>
+    <meta name="description" content="Why this site has no dependencies, and when that's the right call.">
+    <link rel="canonical" href="https://florianhv.de/blog/the-case-for-vanilla">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://florianhv.de/blog/the-case-for-vanilla">
+    <meta property="og:title" content="The Case for Vanilla">
+    <meta property="og:description" content="Why this site has no dependencies, and when that's the right call.">
+    <meta property="og:image" content="https://florianhv.de/img/og-the-case-for-vanilla.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:locale" content="en_US">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="article:published_time" content="2026-03-05">
+    <meta property="article:author" content="Florian H&ouml;veler">
+    <meta property="article:section" content="Web Development">
+    <meta property="article:tag" content="HTML">
+    <meta property="article:tag" content="CSS">
+    <meta property="article:tag" content="JavaScript">
+    <meta property="article:tag" content="Performance">
+    <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png">
+    <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "The Case for Vanilla",
+        "description": "Why this site has no dependencies, and when that's the right call.",
+        "datePublished": "2026-03-05",
+        "author": {
+            "@type": "Person",
+            "name": "Florian H\u00f6veler",
+            "url": "https://florianhv.de"
+        },
+        "publisher": {
+            "@type": "Person",
+            "name": "Florian H\u00f6veler"
+        },
+        "mainEntityOfPage": "https://florianhv.de/blog/the-case-for-vanilla"
+    }
+    </script>
+</head>
+<body>
+
+<main class="page article">
+    <a href="./" class="back" data-reveal style="--d:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Blog
+    </a>
+
+    <header class="article-header" data-reveal style="--d:60">
+        <h1 class="article-title">The Case for Vanilla</h1>
+        <div class="article-meta">
+            <time datetime="2026-03-05">March 5, 2026</time>
+            <span class="sep" aria-hidden="true">&middot;</span>
+            <span>5 min read</span>
+        </div>
+    </header>
+
+    <div class="prose" data-reveal style="--d:120">
+        <p>
+            This site has no <code>package.json</code>. No build step, no
+            framework. Just a few HTML files, one stylesheet, a bit of vanilla
+            JS, and some self-hosted fonts. I push to <code>master</code> and
+            Cloudflare serves it.
+        </p>
+        <p>
+            I'm not trying to make a point with that. It's just the right tool
+            for this particular job. But I think it's worth talking about why,
+            because I keep seeing developers reach for Next.js or Astro for
+            sites that genuinely don't need it. And there's a rule of thumb
+            that I keep coming back to: you can always add tooling later. You
+            can't easily remove it.
+        </p>
+
+        <h2>Frameworks are great, actually</h2>
+        <p>
+            I should say upfront: I write React and Next.js at work every day.
+            I like these tools. They exist because building interactive
+            applications with raw DOM manipulation gets painful once you have
+            real, interconnected state to manage. Routing, code splitting,
+            server rendering, all of that. Frameworks give you solid answers to
+            hard problems.
+        </p>
+        <p>
+            The thing is, a personal site with a photo, a few links, and a
+            paragraph of text is not a hard problem. And when the problem is
+            simple, a framework doesn't simplify it. It just adds moving
+            parts. Even lightweight tools like Astro or 11ty, which are
+            genuinely great for larger static sites, come with a build step,
+            a config file, and a dependency tree you now have to maintain.
+            For a single page, that's overhead I didn't need.
+        </p>
+
+        <h2>What you get from zero dependencies</h2>
+        <p>
+            The obvious one is that there's no supply chain. No
+            <code>node_modules</code>, no lockfile drift, no Dependabot PRs
+            about some transitive dependency you've never heard of. The site I
+            deployed works the same today as when I first pushed it, because
+            there's nothing to go stale.
+        </p>
+        <p>
+            The less obvious one is that you actually understand everything.
+            When I wanted a 3D tilt effect on my photo, I didn't install a
+            library. I wrote about 30 lines of JavaScript. The core of it is
+            just linear interpolation in a <code>requestAnimationFrame</code>
+            loop:
+        </p>
+<pre><code>const lerp = (a, b, t) => a + (b - a) * t;
+
+const tick = () => {
+  cx = lerp(cx, tx, 0.1);
+  cy = lerp(cy, ty, 0.1);
+  photo.style.transform =
+    'perspective(600px) rotateY(' + cx + 'deg) '
+    + 'rotateX(' + cy + 'deg) scale3d(1.03, 1.03, 1.03)';
+  raf = requestAnimationFrame(tick);
+};</code></pre>
+        <p>
+            A <code>lerp</code> at 10% per frame. That's it. It feels smooth
+            and physical, and the whole thing minifies down to less than a
+            kilobyte. Even a lightweight animation utility would add several
+            kB of bundle size plus a build dependency for something you can
+            write yourself in an afternoon.
+        </p>
+
+        <h2>CSS does a lot now</h2>
+        <p>
+            A lot of things that used to need JavaScript are just CSS now.
+            Scroll-driven animations, container queries, <code>:has()</code>
+            as a parent selector. This site doesn't use all of those, but it
+            does use <code>clamp()</code> for fluid spacing,
+            <code>text-wrap: balance</code> for nicer line breaks, and custom
+            properties for theming. No preprocessor, no utility classes.
+        </p>
+        <p>
+            The staggered reveal on page load? One keyframe rule and a custom
+            property for the delay:
+        </p>
+<pre><code>[data-reveal] {
+  animation: reveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--d, 0) * 1ms);
+}</code></pre>
+        <p>
+            Each element gets a <code>--d</code> value in its inline style.
+            The browser handles the rest. No orchestration needed.
+        </p>
+
+        <h2>Simple i18n without a library</h2>
+        <p>
+            The default advice for i18n in the React world is to reach
+            for a library, and for good reason. If you need pluralization
+            rules, date formatting across locales, or RTL support, something
+            like <code>react-i18next</code> earns its weight fast. But for
+            two languages with simple string translations? You can get away
+            with a lot less. The homepage on this site does English and
+            German with a pretty simple setup: each translatable element has
+            a <code>data-i18n</code> attribute, a plain object holds both
+            translations, and one function swaps the text while updating
+            <code>lang</code>, meta tags, and localStorage. The toggle uses
+            the View Transitions API when the browser supports it, and falls
+            back to a regular swap when it doesn't.
+        </p>
+        <p>
+            This obviously wouldn't scale to ten languages or complex
+            formatting. Once you need pluralization rules, interpolation,
+            or namespaced translation files, something like
+            <code>i18next</code> or <code>FormatJS</code> is the right call.
+            But for a personal site with two locales and a handful of
+            strings, the manual approach is plenty.
+        </p>
+
+        <h2>When this doesn't work</h2>
+        <p>
+            There's a clear line where vanilla stops making sense, and that's
+            when your UI has lots of components that need to stay in sync with
+            each other. A dashboard where a filter updates a table and a chart
+            at the same time, a multi-step form with conditional fields, an app
+            with client-side routing. That's when declarative rendering pays
+            for itself, and that's what React is actually for.
+        </p>
+        <p>
+            Sure, a language toggle is technically "state" too. But it's one
+            value that changes once and updates the page. That's a different
+            universe from managing a shopping cart or a real-time feed. The
+            question isn't "does my page have state?" It's "would managing this
+            state by hand make me miserable?" If the answer is no, you probably
+            don't need a framework.
+        </p>
+
+        <h2>Longevity</h2>
+        <p>
+            Here's the thing I care about most. A Next.js site from 2021
+            is already two major React versions behind, probably on a
+            Node version that's hit end of life, and using a routing
+            paradigm that the framework is actively moving away from. It
+            still works, but the pressure to modernize builds up. An HTML
+            file from 2021 renders exactly the same as it did back then.
+            It'll render the same in 2031 too.
+        </p>
+        <p>
+            The web platform is one of the most stable deployment targets
+            in software. If you use it directly, your site just works.
+            For years, without touching it.
+        </p>
+        <p>
+            If your site is a handful of pages, just write the HTML. If
+            it grows to the point where that gets tedious, that's when a
+            static site generator starts earning its keep. But start simple.
+            The web platform already does most of the work. Let it.
+        </p>
+    </div>
+</main>
+
+<script src="../js/shared.js"></script>
+
+</body>
+</html>
