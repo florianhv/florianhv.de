@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start with Postgres - Florian H&ouml;veler</title>
+    <meta name="description" content="Why PostgreSQL is usually the fastest path to a solid product.">
+    <link rel="canonical" href="https://florianhv.de/blog/start-with-postgres">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://florianhv.de/blog/start-with-postgres">
+    <meta property="og:title" content="Start with Postgres">
+    <meta property="og:description" content="Why PostgreSQL is usually the fastest path to a solid product.">
+    <meta property="og:image" content="https://florianhv.de/img/og-start-with-postgres.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:locale" content="en_US">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Start with Postgres">
+    <meta name="twitter:description" content="Why PostgreSQL is usually the fastest path to a solid product.">
+    <meta name="twitter:image" content="https://florianhv.de/img/og-start-with-postgres.jpg">
+    <meta property="article:published_time" content="2026-03-14">
+    <meta property="article:author" content="Florian H&ouml;veler">
+    <meta property="article:section" content="Backend">
+    <meta property="article:tag" content="PostgreSQL">
+    <meta property="article:tag" content="Architecture">
+    <meta property="article:tag" content="Databases">
+    <meta property="article:tag" content="Search">
+    <meta property="article:tag" content="Infrastructure">
+    <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png">
+    <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Start with Postgres",
+        "description": "Why PostgreSQL is usually the fastest path to a solid product.",
+        "datePublished": "2026-03-14",
+        "author": {
+                "@type": "Person",
+                "name": "Florian Höveler",
+                "url": "https://florianhv.de"
+        },
+        "publisher": {
+                "@type": "Person",
+                "name": "Florian Höveler"
+        },
+        "mainEntityOfPage": "https://florianhv.de/blog/start-with-postgres"
+}
+    </script>
+</head>
+<body>
+
+<main class="page article">
+    <a href="./" class="back" data-reveal style="--d:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Blog
+    </a>
+
+    <header class="article-header" data-reveal style="--d:60">
+        <h1 class="article-title">Start with Postgres</h1>
+        <div class="article-meta">
+            <time datetime="2026-03-14">March 14, 2026</time>
+            <span class="sep" aria-hidden="true">&middot;</span>
+            <span>4 min read</span>
+        </div>
+    </header>
+
+    <div class="prose" data-reveal style="--d:120">
+        <p>
+            A lot of products get distributed way before they get successful.
+            Search gets its own cluster. Background jobs get their own store.
+            Analytics gets a separate pipeline. Event fan-out gets a broker.
+            Meanwhile the product still has a moving data model and about three
+            actual users.
+        </p>
+        <p>
+            I keep coming back to the same default: start with Postgres. Not
+            because it's the answer to everything. Just because it handles a
+            much wider slice of early product work than people give it credit
+            for.
+        </p>
+
+        <h2>Specialized systems are great, actually</h2>
+        <p>
+            I should say upfront that this isn't anti-specialist software.
+            Elasticsearch exists for a reason. Redis exists for a reason. Kafka
+            exists for a reason. Dedicated systems are great when your problem
+            actually matches the thing they were built to do.
+        </p>
+        <p>
+            The issue is timing. Teams often adopt those tools while they're
+            still solving product questions, not systems questions. At that
+            stage, the main thing you need is a reliable center of gravity. One
+            place where the truth lives. One system the whole team can inspect.
+            Postgres is very good at being that system.
+        </p>
+
+        <h2>JSON buys you room</h2>
+        <p>
+            Early product models move around a lot. Some parts of the schema
+            are stable on day one. Others are still trying to reveal what they
+            want to be. That's exactly where <code>jsonb</code> shines. You can
+            keep the important parts relational and still give yourself room
+            for structured data that hasn't settled yet.
+        </p>
+<pre><code>create table jobs (
+  id bigint generated always as identity primary key,
+  kind text not null,
+  payload jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+select id
+from jobs
+where payload @&gt; '{"priority":"high"}';</code></pre>
+        <p>
+            This isn't an argument for throwing schema design out of the window.
+            It's just a pragmatic middle ground. Not every changing field needs
+            a migration on day one.
+        </p>
+
+        <h2>Search is usually good enough sooner than people think</h2>
+        <p>
+            A lot of teams reach for a separate search stack the moment someone
+            says the word "search". Sometimes that's right. A lot of times it
+            isn't. PostgreSQL already gives you full-text search, indexes,
+            ranking, and result highlighting. For docs, tickets, internal tools,
+            product catalogs with sane requirements, and a lot of B2B software,
+            that's often enough for quite a while.
+        </p>
+        <p>
+            Dedicated search earns its cost when relevance tuning, typo
+            tolerance, faceting, language handling, or scale really push beyond
+            what the database should be doing. But that should be a pressure you
+            can point to, not a habit.
+        </p>
+
+        <h2>Read models without another database</h2>
+        <p>
+            Materialized views are another feature I think people forget about.
+            If you need a denormalized dashboard view or an expensive aggregate
+            that shouldn't be recomputed on every request, you can precompute it
+            and refresh it when it makes sense.
+        </p>
+<pre><code>create materialized view team_stats as
+select assignee_id, count(*) as open_issues
+from issues
+where status = 'open'
+group by assignee_id;
+
+refresh materialized view concurrently team_stats;</code></pre>
+        <p>
+            That's not the same as building a whole analytics stack. But it also
+            doesn't need to be. Sometimes a cached query is exactly the right
+            level of sophistication.
+        </p>
+
+        <h2>Simple signaling stays close to the data</h2>
+        <p>
+            <code>LISTEN</code> and <code>NOTIFY</code> are great for the class
+            of problems that are really just "something changed; take a look."
+            Wake a worker. Nudge a websocket broadcaster. Invalidate a cache.
+            Tell another process to re-read something. Not every internal event
+            needs a broker on day one.
+        </p>
+        <p>
+            Once you need replay, long retention, independent consumer groups,
+            or heavy fan-out, that's where a dedicated messaging system starts
+            earning its keep. But a surprising number of first versions don't
+            need any of that yet.
+        </p>
+
+        <h2>Security where the data actually is</h2>
+        <p>
+            Row-level security is another big reason I like Postgres as the
+            center of a system. Authorization rules close to the tables are
+            harder to forget than rules scattered across handlers and services.
+            The farther access control drifts from the data, the easier it is to
+            create weird edge cases by accident.
+        </p>
+        <p>
+            The most common alternative is appending
+            <code>WHERE tenant_id = $TENANT_ID</code> to every query in every
+            handler. That works until someone forgets one. And since queries are
+            permissive by default, forgetting a filter doesn't fail loudly. It
+            just quietly returns rows from other tenants. The more endpoints you
+            have, the more places that filter needs to exist, and the harder it
+            becomes to be sure you never missed one.
+        </p>
+        <p>
+            RLS flips the default. Once enabled, the table returns nothing
+            unless a policy explicitly grants access. It's deny-by-default,
+            enforced by the database itself, regardless of which service or
+            query path touches the data.
+        </p>
+<pre><code>alter table projects enable row level security;
+
+create policy tenant_isolation on projects
+  for all
+  using (tenant_id = current_setting('app.tenant_id')::uuid)
+  with check (tenant_id = current_setting('app.tenant_id')::uuid);</code></pre>
+        <p>
+            Now every query against that table is automatically scoped. Your
+            application code still handles business logic filters, but the
+            isolation boundary lives in one place instead of forty
+            <code>WHERE</code> clauses spread across your codebase. It's not a
+            silver bullet. Complex permission models can outgrow what fits
+            neatly in a policy expression, and you still need to test
+            thoroughly. But as a default starting point for tenant isolation,
+            it's remarkably hard to beat.
+        </p>
+
+        <h2>The real win is operational focus</h2>
+        <p>
+            Most of the benefit here isn't flashy. It's operational. One backup
+            story. One replication story. One place to inspect state when
+            something goes weird. One query language. One team mental model.
+            That matters more than people admit, especially when the team is
+            still small.
+        </p>
+        <p>
+            Every extra system adds docs, dashboards, credentials, alerts,
+            failure modes, and "whose problem is this?" moments. Sometimes that
+            trade is worth it. But you should be getting something real back for
+            it.
+        </p>
+
+        <h2>When I stop doing this</h2>
+        <p>
+            There is a line where this stops being the right default. Search can
+            outgrow the database. Async workloads can outgrow simple signaling.
+            Analytics can outgrow cached aggregates. Different traffic patterns
+            can demand independent scaling. That's fine. Splitting things up
+            later is a normal part of growth.
+        </p>
+        <p>
+            But start with the pressure, not the diagram. You can always add a
+            system when the need becomes real. Pulling five systems back into
+            one is much harder. Start with the database that already knows how
+            to do more than tables.
+        </p>
+    </div>
+</main>
+
+<script src="../js/shared.js"></script>
+
+</body>
+</html>
