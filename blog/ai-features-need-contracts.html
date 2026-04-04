@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Features Need Contracts - Florian H&ouml;veler</title>
+    <meta name="description" content="Why schema design, validation, and evals matter more than the demo.">
+    <link rel="canonical" href="https://florianhv.de/blog/ai-features-need-contracts">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://florianhv.de/blog/ai-features-need-contracts">
+    <meta property="og:title" content="AI Features Need Contracts">
+    <meta property="og:description" content="Why schema design, validation, and evals matter more than the demo.">
+    <meta property="og:image" content="https://florianhv.de/img/og-ai-features-need-contracts.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:locale" content="en_US">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI Features Need Contracts">
+    <meta name="twitter:description" content="Why schema design, validation, and evals matter more than the demo.">
+    <meta name="twitter:image" content="https://florianhv.de/img/og-ai-features-need-contracts.jpg">
+    <meta property="article:published_time" content="2026-04-04">
+    <meta property="article:author" content="Florian H&ouml;veler">
+    <meta property="article:section" content="AI">
+    <meta property="article:tag" content="AI">
+    <meta property="article:tag" content="Structured Outputs">
+    <meta property="article:tag" content="JSON Schema">
+    <meta property="article:tag" content="Evaluation">
+    <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png">
+    <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "AI Features Need Contracts",
+    "description": "Why schema design, validation, and evals matter more than the demo.",
+    "datePublished": "2026-04-04",
+    "author": {
+        "@type": "Person",
+        "name": "Florian Höveler",
+        "url": "https://florianhv.de"
+    },
+    "publisher": {
+        "@type": "Person",
+        "name": "Florian Höveler"
+    },
+    "mainEntityOfPage": "https://florianhv.de/blog/ai-features-need-contracts"
+}
+    </script>
+</head>
+<body>
+
+<main class="page article">
+    <a href="./" class="back" data-reveal style="--d:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Blog
+    </a>
+
+    <header class="article-header" data-reveal style="--d:60">
+        <h1 class="article-title">AI Features Need Contracts</h1>
+        <div class="article-meta">
+            <time datetime="2026-04-04">April 4, 2026</time>
+            <span class="sep" aria-hidden="true">&middot;</span>
+            <span>5 min read</span>
+        </div>
+    </header>
+
+    <div class="prose" data-reveal style="--d:120">
+<p>
+    The fastest way to impress people with an AI feature is to show a demo.
+    Point a model at an image or a block of messy text, extract a few fields,
+    and watch the UI fill itself in.
+</p>
+<p>
+    The fastest way to disappoint them is to ship that exact demo straight
+    into production.
+</p>
+<p>
+    I like AI features. I think good vision and language models can remove a
+    lot of repetitive work and make products feel dramatically more helpful.
+    But the thing that keeps making or breaking these features is not usually
+    the model itself. It is the boundary around it.
+</p>
+<p>
+    My default now is simple: if model output will update records, trigger
+    workflows, or feed another system, the feature needs a contract.
+</p>
+
+<h2>The model is good at compression, not at being your database</h2>
+<p>
+    A model can look at noisy input and produce something useful from it very
+    quickly. That is real leverage. What it is not good at is being treated as
+    an untyped source of truth just because the first ten examples looked
+    clean.
+</p>
+<p>
+    Free-form prose is fine when the output is meant for a human to read and
+    judge. A chat response. A summary. A draft description. The moment the
+    output starts mutating state, free-form text becomes a bad interface. Now
+    one invented enum value or one missing field is no longer a harmless
+    quirk. It is a broken workflow, a dirty record, or an expensive cleanup.
+</p>
+<p>
+    That is why I like schema-constrained output so much. Both
+    <a href="https://developers.openai.com/api/docs/guides/structured-outputs/" target="_blank" rel="noopener">OpenAI</a>
+    and
+    <a href="https://ai.google.dev/gemini-api/docs/structured-output" target="_blank" rel="noopener">Google's Gemini API</a>
+    now expose structured output modes built around JSON Schema. That matters
+    less as a vendor feature and more as a design signal. The contract no
+    longer needs to live only in your prompt. It can exist as an explicit,
+    typed boundary.
+</p>
+
+<h2>A schema is a product decision</h2>
+<p>
+    When people talk about structured AI output, they often frame it as an
+    implementation detail. I do not think it is. Designing the schema is part
+    of designing the feature.
+</p>
+<p>
+    Which fields are required? Which values are allowed? Which ambiguity gets
+    preserved for human review instead of being forced into a category? Which
+    fields are safe for the model to suggest, and which ones should only be
+    set by deterministic application logic? Those are product choices.
+</p>
+<p>
+    <a href="https://json-schema.org/understanding-json-schema/reference/object" target="_blank" rel="noopener">JSON Schema's object rules</a>
+    make this concrete. You can say that fields are required. You can restrict
+    extra keys with <code>additionalProperties</code>. You can constrain enums
+    and nested shapes. That is not glamour work, but it is where reliability
+    starts.
+</p>
+<pre><code>{
+  "type": "object",
+  "required": ["brand", "category", "confidence"],
+  "additionalProperties": false,
+  "properties": {
+    "brand": { "type": "string" },
+    "category": { "enum": ["shoe", "bag", "watch"] },
+    "confidence": { "type": "number" }
+  }
+}</code></pre>
+<p>
+    I like small, strict contracts. They force the feature to admit what it is
+    actually trying to do.
+</p>
+
+<h2>Validation is necessary. It is not enough.</h2>
+<p>
+    This is the part that trips people up. A valid object can still be wrong.
+    The schema can guarantee shape. It cannot guarantee truth.
+</p>
+<p>
+    That means the job is not finished once the payload parses. You still need
+    semantic checks. Does the category make sense for this seller? Does the
+    detected brand conflict with existing catalog data? Is the confidence low
+    enough that a human should review it? Did the extracted value change a
+    regulated field that should never be auto-applied?
+</p>
+<p>
+    I think this is where a lot of AI features quietly become normal software
+    engineering again, which is good news. You can validate. You can compare.
+    You can build guardrails. You can hold uncertain cases in a review queue
+    instead of pretending every output deserves the same level of trust.
+</p>
+
+<h2>Keep decisions deterministic when you can</h2>
+<p>
+    One pattern I like is separating extraction from decision-making. Let the
+    model propose structured facts or candidate labels. Let deterministic code
+    decide what happens next.
+</p>
+<p>
+    That sounds small, but it changes the reliability profile of the whole
+    system. "The model thinks this image is a black leather boot with brand X"
+    is one kind of output. "Therefore publish this product, price it like
+    that, and sync it to four external channels" is a much bigger leap.
+</p>
+<p>
+    I would rather let the model narrow the search space and let application
+    code apply business rules, confidence thresholds, inventory rules, and
+    side effects. The model can be smart. The system around it should still be
+    explicit.
+</p>
+
+<h2>Evals beat vibes</h2>
+<p>
+    Another thing I have become more convinced of is that prompt feel is a bad
+    production metric. You need examples, failure buckets, and a repeatable way
+    to test changes.
+</p>
+<p>
+    NIST's AI Risk Management Framework puts a lot of weight on test,
+    evaluation, verification, and validation across the AI lifecycle, and its
+    generative AI profile calls out the need to measure, monitor, and document
+    erroneous outputs and reliability in operation. I think that is the right
+    instinct. Model quality is not a static property. It is something you keep
+    checking.
+</p>
+<p>
+    The practical version of this is not mysterious. Save representative
+    samples. Track regressions. Keep a set of cases that used to fail. Re-run
+    them when you change prompts, models, schemas, or post-processing. The
+    official
+    <a href="https://developers.openai.com/cookbook/examples/evaluation/use-cases/structured-outputs-evaluation/" target="_blank" rel="noopener">structured outputs eval example from OpenAI</a>
+    is worth looking at even if you use a different stack, because the habit
+    matters more than the tooling.
+</p>
+
+<h2>Free text still has its place</h2>
+<p>
+    I am not arguing that everything should become JSON. Plenty of AI features
+    are supposed to sound human. Drafting copy, helping a support agent,
+    summarizing a thread, or explaining a result to a user. Those are good
+    places for free-form output.
+</p>
+<p>
+    I only get strict when the output crosses a trust boundary. If it writes to
+    the database, feeds a search index, triggers a workflow, or calls another
+    API, I want a contract and I want validation. That is where "close enough"
+    stops being good enough.
+</p>
+<p>
+    The demos people remember usually come from the model. The production
+    features people trust usually come from the contract around it.
+</p>
+
+<h2>A few things that informed this</h2>
+<ul>
+    <li><a href="https://developers.openai.com/api/docs/guides/structured-outputs/" target="_blank" rel="noopener">OpenAI guide to structured outputs</a></li>
+    <li><a href="https://ai.google.dev/gemini-api/docs/structured-output" target="_blank" rel="noopener">Google Gemini guide to structured outputs</a></li>
+    <li><a href="https://json-schema.org/understanding-json-schema/reference/object" target="_blank" rel="noopener">Understanding JSON Schema, object constraints</a></li>
+    <li><a href="https://nvlpubs.nist.gov/nistpubs/ai/nist.ai.100-1.pdf" target="_blank" rel="noopener">NIST AI Risk Management Framework 1.0</a></li>
+    <li><a href="https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf" target="_blank" rel="noopener">NIST Generative AI Profile</a></li>
+    <li><a href="https://developers.openai.com/cookbook/examples/evaluation/use-cases/structured-outputs-evaluation/" target="_blank" rel="noopener">OpenAI structured outputs eval example</a></li>
+</ul>
+    </div>
+</main>
+
+<script src="../js/shared.js"></script>
+
+</body>
+</html>
