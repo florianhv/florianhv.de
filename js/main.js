@@ -59,7 +59,7 @@
 
     const strings = {
         en: {
-            meta: 'Software Developer from Bremen, at <a href="https://codable.gmbh" target="_blank" rel="noopener">codable</a>.',
+            meta: 'Software Developer from Bremen, at <a href="https://novadigital.group/" target="_blank" rel="noopener">Nova&nbsp;Digital&nbsp;Solutions</a>.',
             about: 'I design, build, and maintain production web platforms across the full stack. From architecture and API integrations to quality assurance and cloud infrastructure.',
             navLabel: 'Contact and profiles',
             description: 'Florian H\u00f6veler. Software developer in Bremen, Germany. Full-stack web platforms, API integrations, and cloud infrastructure.',
@@ -67,7 +67,7 @@
             toggle: 'DE'
         },
         de: {
-            meta: 'Softwareentwickler aus Bremen, bei <a href="https://codable.gmbh" target="_blank" rel="noopener">codable</a>.',
+            meta: 'Softwareentwickler aus Bremen, bei <a href="https://novadigital.group/" target="_blank" rel="noopener">Nova&nbsp;Digital&nbsp;Solutions</a>.',
             about: 'Ich konzipiere, entwickle und pflege produktionsreife Webplattformen. Von der Architektur \u00fcber API-Integrationen und Qualit\u00e4tssicherung bis zur Cloud-Infrastruktur.',
             navLabel: 'Kontakt und Profile',
             description: 'Florian H\u00f6veler. Softwareentwickler in Bremen. Full-Stack-Webplattformen, API-Integrationen und Cloud-Infrastruktur.',
