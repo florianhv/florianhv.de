@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubernetes Without the Drama - Florian H&ouml;veler</title>
+    <meta name="description" content="Why I like RKE2 when Kubernetes needs to be boring infrastructure.">
+    <link rel="canonical" href="https://florianhv.de/blog/kubernetes-without-the-drama">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://florianhv.de/blog/kubernetes-without-the-drama">
+    <meta property="og:title" content="Kubernetes Without the Drama">
+    <meta property="og:description" content="Why I like RKE2 when Kubernetes needs to be boring infrastructure.">
+    <meta property="og:image" content="https://florianhv.de/img/og-kubernetes-without-the-drama.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:locale" content="en_US">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Kubernetes Without the Drama">
+    <meta name="twitter:description" content="Why I like RKE2 when Kubernetes needs to be boring infrastructure.">
+    <meta name="twitter:image" content="https://florianhv.de/img/og-kubernetes-without-the-drama.jpg">
+    <meta property="article:published_time" content="2026-05-08">
+    <meta property="article:author" content="Florian H&ouml;veler">
+    <meta property="article:section" content="Infrastructure">
+    <meta property="article:tag" content="Kubernetes">
+    <meta property="article:tag" content="RKE2">
+    <meta property="article:tag" content="Infrastructure">
+    <meta property="article:tag" content="Operations">
+    <link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png">
+    <link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+    <link rel="stylesheet" href="../css/style.css">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Kubernetes Without the Drama",
+        "description": "Why I like RKE2 when Kubernetes needs to be boring infrastructure.",
+        "datePublished": "2026-05-08",
+        "author": {
+            "@type": "Person",
+            "name": "Florian Höveler",
+            "url": "https://florianhv.de"
+        },
+        "publisher": {
+            "@type": "Person",
+            "name": "Florian Höveler"
+        },
+        "mainEntityOfPage": "https://florianhv.de/blog/kubernetes-without-the-drama",
+        "articleSection": "Infrastructure",
+        "keywords": [
+        "Kubernetes",
+        "RKE2",
+        "Infrastructure",
+        "Operations"
+        ]
+    }
+    </script>
+</head>
+<body>
+
+<main class="page article">
+    <a href="./" class="back" data-reveal style="--d:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Blog
+    </a>
+
+    <header class="article-header" data-reveal style="--d:60">
+        <h1 class="article-title">Kubernetes Without the Drama</h1>
+        <div class="article-meta">
+            <time datetime="2026-05-08">May 8, 2026</time>
+            <span class="sep" aria-hidden="true">&middot;</span>
+            <span>10 min read</span>
+        </div>
+    </header>
+
+    <div class="prose" data-reveal style="--d:120">
+        <p>
+            Kubernetes has a way of making normal work sound heavier than it
+            is. A process becomes a pod. A port becomes a service. A restart
+            becomes reconciliation. A deploy becomes a rollout with history,
+            health checks, and a controller watching from the side.
+        </p>
+        <p>
+            That weight can be annoying. It can also be useful.
+        </p>
+        <p>
+            I don't reach for Kubernetes when a product only needs one app
+            server, one database, and a deploy button. That setup can stay
+            simple for a long time, and most products benefit from staying
+            simple longer than people expect. Kubernetes starts to earn its
+            place when the system has several services, workers, cron jobs,
+            internal APIs, certificates, rollbacks, and enough operational
+            habits that every special deploy path becomes another thing to
+            remember at the worst possible moment.
+        </p>
+        <p>
+            For that kind of work, I like RKE2. It gives me normal Kubernetes
+            on machines I control, with an install shape I can still understand
+            when something breaks. A config file. A systemd service. A
+            kubeconfig on disk. Etcd snapshots I can point at. Serious enough
+            for production, without making the cluster bootstrap the most
+            interesting part of the project.
+        </p>
+
+        <h2>Start smaller than your ambition</h2>
+        <p>
+            A useful cluster starts with restraint. One CNI. One ingress story.
+            One way to ship manifests. One convention for namespaces. One
+            backup story. One place where people look when the deploy failed.
+        </p>
+        <p>
+            Kubernetes already has a lot of nouns. Adding more because the
+            ecosystem has them is how a small platform turns into a hobby. I
+            like asking a very boring question for every component: who will
+            notice when this breaks, and who knows how to fix it? If the answer
+            is vague, the component probably needs to wait.
+        </p>
+        <p>
+            This applies to RKE2 as well. The nice part about RKE2 is that it
+            gives you a solid base layer. The dangerous part is that a solid
+            base layer makes it easy to keep adding things. Cert manager,
+            external DNS, service meshes, policy engines, GitOps controllers,
+            dashboards, storage operators. All useful in the right place. All
+            expensive when nobody owns them.
+        </p>
+
+        <h2>The machines still matter</h2>
+        <p>
+            RKE2 doesn't make Linux disappear. It makes Kubernetes easier to
+            install and operate, but the nodes are still real machines with
+            clocks, disks, hostnames, kernel settings, firewall rules, and
+            systemd units.
+        </p>
+        <p>
+            I want those machines to be boring before Kubernetes enters the
+            picture. Unique hostnames. Predictable private networking. Time
+            sync. Enough disk for images, logs, and etcd. A clear rule for who
+            can SSH. Firewall rules written down instead of remembered. If a
+            node is already weird as a Linux server, it will be weirder as a
+            Kubernetes node.
+        </p>
+        <p>
+            For control-plane nodes, I also care about the shape of quorum.
+            With embedded etcd, RKE2 runs etcd on server nodes and those members
+            maintain quorum. One server is simple and has no high availability.
+            Three servers is the normal small HA shape. Two servers is usually
+            where people learn that quorum math doesn't care about optimism.
+        </p>
+        <p>
+            Worker nodes are easier to add and remove. I still like labeling
+            them intentionally from the beginning. General workloads, GPU
+            workloads, storage-heavy workloads, whatever actually exists. Labels
+            become scheduling language later, and it is much nicer when that
+            language was not invented during an incident.
+        </p>
+
+        <h2>The RKE2 config should read like a boot contract</h2>
+        <p>
+            The primary RKE2 configuration lives at
+            <code>/etc/rancher/rke2/config.yaml</code>. That file is one of the
+            main reasons I like it. It is easy to put under Ansible, Terraform,
+            cloud-init, or a plain provisioning script. You can read it over SSH
+            without opening a dashboard. You can diff it. You can explain it.
+        </p>
+<pre><code>token: "replace-with-a-long-random-secret"
+
+tls-san:
+  - "k8s.example.com"
+
+profile: "cis"
+write-kubeconfig-mode: "0640"
+cni: "canal"
+
+etcd-snapshot-schedule-cron: "0 */6 * * *"
+etcd-snapshot-retention: 28
+etcd-snapshot-compress: true
+etcd-s3: true
+etcd-s3-bucket: "rke2-production-snapshots"
+etcd-s3-folder: "cluster-a"</code></pre>
+        <p>
+            I would not copy this blindly. The point is the shape. The file
+            should contain the decisions that define how the cluster boots and
+            recovers: token handling, TLS names, hardening profile, CNI choice,
+            snapshot policy, and the few settings that must stay consistent
+            across server nodes.
+        </p>
+        <p>
+            RKE2 also has an agent config for worker nodes. That one should be
+            even more boring:
+        </p>
+<pre><code>server: https://k8s.example.com:9345
+token: "same-secret-or-agent-token"
+
+node-label:
+  - "workload=general"</code></pre>
+        <p>
+            The server registration port and the Kubernetes API port are not the
+            same thing. Agents register against the RKE2 server endpoint on
+            <code>9345</code>. The Kubernetes API is served on <code>6443</code>.
+            That is exactly the kind of detail I want written down before the
+            firewall gets touched.
+        </p>
+        <p>
+            When I use <code>profile: "cis"</code>, I treat it as a real
+            operational choice. RKE2 will apply stricter behavior and check host
+            requirements. That is good. It also means a sloppy host setup can
+            fail early. I prefer that to a cluster that starts happily and hides
+            the problem until later.
+        </p>
+
+        <h2>Do less outside the API server</h2>
+        <p>
+            Once RKE2 is running, I want most of the system to exist as normal
+            Kubernetes objects. Namespaces, deployments, services, ingress,
+            jobs, service accounts, RBAC, config maps, secrets, policies. The
+            API server should know what exists. The team should be able to run
+            <code>kubectl diff</code>, review a manifest, and understand what is
+            about to change.
+        </p>
+        <p>
+            Provisioning scripts are good for machines. They are a bad hiding
+            place for application state. A script that creates a namespace,
+            patches an ingress controller, installs a random chart, creates a
+            secret, and then exits is easy to write once and annoying forever.
+            Six months later nobody knows which parts are safe to rerun.
+        </p>
+        <p>
+            RKE2 has a useful add-on mechanism: manifests placed in
+            <code>/var/lib/rancher/rke2/server/manifests</code> are applied by
+            the cluster. That is great for bootstrapping packaged components or
+            cluster-level add-ons. I still want the source of those files in a
+            repo. The server directory should be an output of provisioning, not
+            the only copy of important state.
+        </p>
+
+        <h2>A manifest is where the app tells the truth</h2>
+        <p>
+            A deployment manifest should answer the questions an operator would
+            ask at 02:00. Which image is this? How many copies should run? What
+            does it need from the environment? How much CPU and memory should
+            the scheduler reserve? How does Kubernetes know the app has started?
+            When should traffic arrive? What counts as stuck? How should the app
+            shut down?
+        </p>
+<pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: shop
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      serviceAccountName: web
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: web
+          image: registry.example.com/shop/web:2026-05-07
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: web-env
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              memory: "512Mi"
+          startupProbe:
+            httpGet:
+              path: /started
+              port: http
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true</code></pre>
+        <p>
+            This is still a small manifest, but it already says a lot. The
+            rollout keeps old pods serving while a new pod comes up. The
+            scheduler knows the baseline resources. The app gets a startup
+            window instead of being killed during boot. Readiness controls
+            traffic. Liveness is reserved for a process that needs a restart.
+        </p>
+        <p>
+            I like leaving CPU limits out for many web apps and workers unless
+            there is a clear reason to cap them. Memory limits are different;
+            a process that can eat the node needs a boundary. Requests matter
+            either way. Without requests, the scheduler is guessing, and the
+            first real traffic spike becomes a scheduling lesson.
+        </p>
+
+        <h2>Readiness, liveness, and startup should mean different things</h2>
+        <p>
+            A lot of broken Kubernetes setups hide behind one
+            <code>/health</code> endpoint. Everything points at it. It always
+            returns 200. The manifest looks complete and the cluster learns
+            nothing.
+        </p>
+        <p>
+            I prefer three boring endpoints with boring meanings. Startup means
+            the process finished its boot path. Readiness means this instance
+            can receive new requests right now. Liveness means the process is in
+            a state where restarting it is safer than waiting.
+        </p>
+        <p>
+            Those meanings matter during real failures. If the database is
+            unavailable for thirty seconds, killing every API pod might make the
+            outage worse. If an app is warming a cache, readiness should stay
+            false until it can serve traffic. If a worker is finishing a job,
+            liveness should not punish it for being busy.
+        </p>
+        <p>
+            Good probes feel almost boring in production. Pods enter and leave
+            service cleanly. Rollouts pause when the new version is bad. Dead
+            processes get restarted. Slow boots get time to finish. You don't
+            get that from YAML alone. The application has to expose honest
+            signals.
+        </p>
+
+        <h2>Services and ingress should stay unsurprising</h2>
+        <p>
+            Internal networking is one of the best reasons to use Kubernetes.
+            A service name becomes the stable way to reach a workload. Pods can
+            move around. Deployments can roll. The caller doesn't need to know
+            which node currently runs the container.
+        </p>
+<pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: shop
+spec:
+  selector:
+    app: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http</code></pre>
+        <p>
+            I like keeping that layer plain. ClusterIP services for internal
+            traffic. Ingress for HTTP coming from outside. A small number of
+            ingress classes. Clear TLS ownership. No clever chain of proxies
+            that only one person understands.
+        </p>
+        <p>
+            RKE2 packages common cluster components as Helm charts, and those
+            charts can be customized with <code>HelmChartConfig</code>
+            resources. That is convenient for things like CoreDNS, the CNI, or
+            ingress configuration. I still try to keep the number of local
+            overrides low. Every override becomes part of the cluster contract.
+        </p>
+        <p>
+            The CNI deserves the same restraint. RKE2 defaults to Canal, and it
+            also supports Cilium, Calico, and Flannel. Pick the one that matches
+            the network you actually need. If you need Cilium features, use
+            Cilium. If you don't, the quieter option is often the better one.
+        </p>
+
+        <h2>Secrets need boring rules</h2>
+        <p>
+            Kubernetes Secrets are useful. They also get misunderstood. A Secret
+            is an API object for small sensitive values like tokens, passwords,
+            and keys. It is not a complete secrets strategy by itself.
+        </p>
+        <p>
+            The first rule is simple: raw secrets should not be committed to the
+            repo. The second rule is that access to Secrets needs to be much
+            tighter than access to normal config. The third rule is that etcd
+            matters, because the API server stores those objects there.
+        </p>
+        <p>
+            In practice, I want one clear path. Maybe SOPS with age keys. Maybe
+            External Secrets with a real secret manager. Maybe Sealed Secrets
+            for a smaller setup. The tool matters less than the convention. A
+            developer should not have to guess how a database URL gets into a
+            pod.
+        </p>
+<pre><code>apiVersion: v1
+kind: Secret
+metadata:
+  name: web-env
+  namespace: shop
+type: Opaque
+stringData:
+  DATABASE_URL: "postgres://example"</code></pre>
+        <p>
+            That manifest shows the shape, not the storage recommendation. I
+            would not commit that value as-is. The useful part is that the
+            deployment consumes a named secret and the secret lifecycle has an
+            owner.
+        </p>
+
+        <h2>Backups before nice dashboards</h2>
+        <p>
+            Dashboards are pleasant. Restores are better.
+        </p>
+        <p>
+            With embedded etcd, RKE2 backs up cluster information using etcd
+            snapshots. Scheduled snapshots exist, on-demand snapshots exist,
+            retention can be configured, and snapshots can be pushed to an
+            S3-compatible object store. That is exactly the kind of boring
+            feature I want early.
+        </p>
+        <p>
+            I still prefer making the policy explicit in
+            <code>config.yaml</code>. How often do snapshots run? How many do we
+            keep? Are they compressed? Are they copied off the node? Who can
+            read that bucket? Which cluster does this folder belong to? None of
+            those questions are exciting. They become very exciting when the
+            control-plane disk dies.
+        </p>
+        <p>
+            The restore path matters more than the snapshot command. I want a
+            runbook that has been tested on a disposable cluster. I want the
+            server token backed up with the same seriousness as the snapshots,
+            because RKE2 uses it when restoring bootstrap data. I want everyone
+            to remember that an etcd snapshot is the cluster's memory. It does
+            not replace a Postgres backup, object storage backup, or anything
+            else the application owns.
+        </p>
+        <p>
+            My favorite backup check is still painfully simple: can I explain
+            the restore path without searching through chat history? If not,
+            the backup story is unfinished.
+        </p>
+
+        <h2>Upgrades should be a habit</h2>
+        <p>
+            A Kubernetes cluster that cannot be upgraded is already on borrowed
+            time. The longer upgrades feel scary, the more likely they are to be
+            delayed, and delayed upgrades have a way of turning into projects.
+        </p>
+        <p>
+            I like boring upgrade habits. Pin the version. Read the release
+            notes. Take or verify a fresh snapshot. Upgrade one server node.
+            Watch the API. Upgrade the next server. Then move to agents. RKE2's
+            manual upgrade guidance follows the same basic order: servers first,
+            one at a time, then agent nodes.
+        </p>
+        <p>
+            Automated upgrades can be fine, especially when Rancher manages the
+            cluster. I still want humans to understand the sequence. Automation
+            should remove repetitive work, not hide the recovery model.
+        </p>
+        <p>
+            The same goes for application rollouts. A deployment with a sane
+            rolling strategy, real readiness checks, and a small
+            <code>revisionHistoryLimit</code> is easier to trust. You can ship,
+            observe, and roll back without treating every deploy like an event.
+        </p>
+
+        <h2>Stateful workloads raise the bar</h2>
+        <p>
+            I am happy running web apps, workers, cron jobs, websocket services,
+            and internal APIs on Kubernetes. Stateful systems deserve a slower
+            conversation.
+        </p>
+        <p>
+            Running Postgres, Redis, or Elasticsearch in the cluster can be the
+            right choice. It can also turn a simple platform into a storage
+            project. Now you care about volume classes, node failure, backup
+            operators, restore drills, anti-affinity, disruption budgets,
+            kernel settings, and upgrade choreography. That can all be worth it.
+            It should be a deliberate decision.
+        </p>
+        <p>
+            A managed database or a boring external Postgres VM often reduces
+            the blast radius while the product is still changing. I don't mind
+            that split. The goal is not to win a Kubernetes purity contest. The
+            goal is to keep the system understandable.
+        </p>
+
+        <h2>Logs and metrics should answer boring questions</h2>
+        <p>
+            Observability can also get overbuilt. I usually start with the
+            questions I actually need answered. Is the rollout healthy? Which
+            pods are restarting? Are requests failing at ingress, in the app, or
+            downstream? Is a node under memory pressure? Are snapshots running?
+            Is cert renewal working? Are jobs succeeding?
+        </p>
+        <p>
+            The first useful version does not need to be glamorous. Centralized
+            logs with labels that include namespace, pod, container, and app.
+            Metrics for nodes, pods, ingress, and the application. Alerts for
+            symptoms that require action. Fewer alerts than dashboards. Much
+            fewer.
+        </p>
+        <p>
+            Kubernetes gives you a lot of metadata for free. Use it. A log line
+            without namespace and pod information is just text. A metric without
+            labels you can use during an incident is mostly decoration.
+        </p>
+
+        <h2>Where I draw the line</h2>
+        <p>
+            I still like small servers. I still like Postgres doing more than
+            people expect. I still like static sites without build steps. The
+            same rule applies here: use the platform when it removes more
+            complexity than it adds.
+        </p>
+        <p>
+            Kubernetes helps when you need a common deployment model for several
+            workloads, clean service discovery, controlled rollouts, horizontal
+            scaling, scheduled jobs, namespaced permissions, and a predictable
+            way to operate the whole thing. RKE2 helps when you want that on
+            your own infrastructure with a base layer that stays readable.
+        </p>
+        <p>
+            I would skip it for a small product with one service and a database.
+            I would also skip it for a team that wants the badge but not the
+            maintenance. Kubernetes is infrastructure, and infrastructure always
+            sends invoices. Sometimes in money, sometimes in attention.
+        </p>
+        <p>
+            The version I like is quiet. The cluster boots from files I can
+            inspect. Workloads describe how they run. Probes mean something.
+            Secrets have a rule. Snapshots leave the node. Restores have been
+            tested. Upgrades happen before they become archaeology.
+        </p>
+        <p>
+            Good infrastructure should feel a little strict, a little boring,
+            and very easy to reason about when a normal Tuesday suddenly stops
+            being normal.
+        </p>
+
+        <h2>A few things that informed this</h2>
+        <ul>
+            <li><a href="https://docs.rke2.io/install/configuration" target="_blank" rel="noopener">RKE2 configuration options</a></li>
+            <li><a href="https://docs.rke2.io/reference/server_config" target="_blank" rel="noopener">RKE2 server configuration reference</a></li>
+            <li><a href="https://docs.rke2.io/install/quickstart" target="_blank" rel="noopener">RKE2 quick start</a></li>
+            <li><a href="https://docs.rke2.io/datastore/embedded" target="_blank" rel="noopener">RKE2 embedded datastore documentation</a></li>
+            <li><a href="https://docs.rke2.io/datastore/backup_restore" target="_blank" rel="noopener">RKE2 backup and restore documentation</a></li>
+            <li><a href="https://docs.rke2.io/security/hardening_guide" target="_blank" rel="noopener">RKE2 CIS hardening guide</a></li>
+            <li><a href="https://docs.rke2.io/networking/basic_network_options" target="_blank" rel="noopener">RKE2 network options</a></li>
+            <li><a href="https://docs.rke2.io/add-ons/helm" target="_blank" rel="noopener">RKE2 Helm add-ons</a></li>
+            <li><a href="https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/" target="_blank" rel="noopener">Kubernetes declarative object management</a></li>
+            <li><a href="https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/" target="_blank" rel="noopener">Kubernetes probes documentation</a></li>
+            <li><a href="https://kubernetes.io/docs/concepts/configuration/secret/" target="_blank" rel="noopener">Kubernetes Secrets documentation</a></li>
+            <li><a href="https://kubernetes.io/docs/concepts/security/secrets-good-practices/" target="_blank" rel="noopener">Kubernetes Secrets good practices</a></li>
+        </ul>
+    </div>
+</main>
+
+<script src="../js/shared.js"></script>
+
+</body>
+</html>
